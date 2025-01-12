@@ -6,7 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 The HugeRTE React component 1.0.0 is based on the TinyMCE React component 6.0.0-rc. Unreleased changes from Tiny since 5.1.0 are included in the 1.0.0 changelog.
 
-## 1.0.0 - 2025-01-10
+## 1.0.1 - 2025-01-11
+
+### Fixed
+- License headers were not included in the files in the `lib` directory because the build was made before including the license headers.
+
+## 1.0.0 - 2025-01-11
 
 ### Added
 - Added `cdnVersion` prop.
