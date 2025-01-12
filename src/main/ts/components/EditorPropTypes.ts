@@ -1,3 +1,9 @@
+/**
+ * Official HugeRTE React component
+ * Copyright (c) 2022 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Copyright (c) 2024 HugeRTE contributors
+ * Licensed under the MIT license (https://github.com/hugerte/hugerte-react/blob/main/LICENSE.TXT)
+ */
 import * as PropTypes from 'prop-types';
 import { IEvents } from '../Events';
 import { IProps } from './Editor';
@@ -87,8 +93,6 @@ export const eventPropTypes: IEventPropTypes = {
 };
 
 export const EditorPropTypes: IEditorPropTypes = {
-  apiKey: PropTypes.string,
-  licenseKey: PropTypes.string,
   id: PropTypes.string,
   inline: PropTypes.bool,
   init: PropTypes.object,
@@ -97,20 +101,12 @@ export const EditorPropTypes: IEditorPropTypes = {
   value: PropTypes.string,
   tagName: PropTypes.string,
   tabIndex: PropTypes.number,
-  cloudChannel: PropTypes.string,
+  cdnVersion: PropTypes.string,
   plugins: PropTypes.oneOfType([ PropTypes.string, PropTypes.array ]),
   toolbar: PropTypes.oneOfType([ PropTypes.string, PropTypes.array ]),
   disabled: PropTypes.bool,
   textareaName: PropTypes.string,
-  tinymceScriptSrc: PropTypes.oneOfType([
-    PropTypes.string,
-    PropTypes.arrayOf(PropTypes.string),
-    PropTypes.arrayOf(PropTypes.shape({
-      src: PropTypes.string,
-      async: PropTypes.bool,
-      defer: PropTypes.bool
-    }))
-  ]),
+  hugerteScriptSrc: PropTypes.string,
   rollback: PropTypes.oneOfType([ PropTypes.number, PropTypes.oneOf([ false ]) ]),
   scriptLoading: PropTypes.shape({
     async: PropTypes.bool,

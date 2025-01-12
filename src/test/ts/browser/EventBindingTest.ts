@@ -1,5 +1,4 @@
 import { Assert, describe } from '@ephox/bedrock-client';
-import { Arr, Obj, Fun } from '@ephox/katamari';
 import { IAllProps } from 'src/main/ts/components/Editor';
 import { configHandlers2 } from '../../../main/ts/Utils';
 
@@ -12,8 +11,8 @@ describe('EventBindingTest', () => {
   let boundHandlers: Record<string, Handler>;
 
   const check = (handlers: Record<string, 'off' | 'on'>, activeHandlers: string[]) => {
-    const onHandlers = Obj.keys(Obj.filter(handlers, (value) => value === 'on'));
-    const offHandlers = Obj.keys(Obj.filter(handlers, (value) => value === 'off'));
+    const onHandlers = Object.keys(handlers).filter((key) => handlers[key] === 'on');
+    const offHandlers = Object.keys(handlers).filter((key) => handlers[key] === 'off');
     Assert.eq('Expected number of calls to be sum of handlers removed and handlers added', onHandlers.length + offHandlers.length, calls.length);
     let i: number;
     for (i = 0; i < offHandlers.length; i++) {
@@ -27,19 +26,19 @@ describe('EventBindingTest', () => {
       Assert.eq('Handler did not match expected', handlers[value.name], 'on');
     }
     Assert.eq('Bound handlers did not match expected', activeHandlers.length, Object.keys(boundHandlers).length);
-    Obj.each(boundHandlers, (boundHandler) => {
-      Assert.eq('Expected bound handler to be active', true, Arr.contains(activeHandlers, boundHandler.key));
+    Object.values(boundHandlers).forEach((boundHandler) => {
+      Assert.eq('Expected bound handler to be active', true, activeHandlers.includes(boundHandler.key));
     });
   };
 
   const on = (name: string, handler: Handler, _prepend?: boolean) => calls.push({ type: 'on', name, handler });
   const off = (name: string, handler: Handler) => calls.push({ type: 'off', name, handler });
   const adapter = (lookup: typeof dummyLookupProp, key: string): Handler => ({ key });
-  const dummyLookupProp: any = <K extends keyof IAllProps>(_key: K) => Fun.die('not implemented');
+  const dummyLookupProp: any = <K extends keyof IAllProps>(_key: K) => (() => {throw new Error('not implemented');});
 
   // dummy functions for handlers
-  const focusHandler = Fun.noop;
-  const blurHandler = Fun.noop;
+  const focusHandler = (() => {});
+  const blurHandler = (() => {});
 
   // check no handlers
   calls = [];

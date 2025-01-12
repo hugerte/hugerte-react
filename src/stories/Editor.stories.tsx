@@ -1,13 +1,21 @@
+/**
+ * Official HugeRTE React component
+ * Copyright (c) 2022 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Copyright (c) 2024 HugeRTE contributors
+ * Licensed under the MIT license (https://github.com/hugerte/hugerte-react/blob/main/LICENSE.TXT)
+ */
 import React from 'react';
-import { EditorEvent, Events, Editor as TinyMCEEditor } from 'tinymce';
+import { EditorEvent, Events, Editor as HugeRTEEditor } from 'hugerte';
 import { StoryObj } from '@storybook/react';
 import { Editor, IAllProps } from '../main/ts/components/Editor';
 
-const apiKey = 'qagffr3pkuv17a8on1afax661irst1hbr4e6tbv888sz91jc';
 const initialValue = `
-<h2>Full-featured rich text editing experience</h2>
-<p>No matter what you're building, TinyMCE has got you covered.</p>
-`.trim();
+<h2 style="text-align: center;">
+  HugeRTE provides a <span style="text-decoration: underline;">feature-rich</span> rich text editing experience.
+</h2>
+<p style="text-align: center;">
+  <strong><span style="font-size: 14pt;"><span style="color: #7e8c8d; font-weight: 600;">If you're building an application that needs Rich Text Editing, check out HugeRTE!</span></span></strong>
+</p>`.trim();
 
 /** Assigning this on a StoryObj will allow its args to be modified. */
 const argTypes = {
@@ -30,7 +38,6 @@ export default {
 
 export const IframeEditor: StoryObj<Editor> = {
   args: {
-    apiKey,
     initialValue,
   },
   argTypes,
@@ -38,7 +45,6 @@ export const IframeEditor: StoryObj<Editor> = {
 
 export const InlineEditor: StoryObj<Editor> = {
   args: {
-    apiKey,
     initialValue,
     inline: true,
   },
@@ -58,7 +64,6 @@ export const ControlledInput: StoryObj<Editor> = {
     return (
       <div>
         <Editor
-          apiKey={apiKey}
           value={data}
           onEditorChange={(e) => setData(e)}
         />
@@ -73,11 +78,13 @@ export const ControlledInput: StoryObj<Editor> = {
 };
 
 // The editor will enforce a value that is given to it.
-// Note that the value must be valid HTML or it will forever correcting it and then rolling back the change.
+// Note that the value must be valid HTML or it will get in an endless loop
+// forever correcting it and then rolling back the change.
+// TODO: That should not be the case. The value that the editor enforces
+// should be the corrected, not the original HTML.
 export const ControlledInputFixed: StoryObj<Editor> = {
   render: () =>
     <Editor
-      apiKey={apiKey}
       value='<p>This value is <strong>fixed</strong> and can not be <em>changed</em>.</p>'
     />
 };
@@ -88,11 +95,11 @@ export const ControlledInputLimitLength: StoryObj<Editor> = {
     const [ data, setData ] = React.useState('<p>This field can only take 50 characters.</p>');
     const [ len, setLen ] = React.useState(0);
 
-    const handleInit = (evt: unknown, editor: TinyMCEEditor) => {
+    const handleInit = (evt: unknown, editor: HugeRTEEditor) => {
       setLen(editor.getContent({ format: 'text' }).length);
     };
 
-    const handleUpdate = (value: string, editor: TinyMCEEditor) => {
+    const handleUpdate = (value: string, editor: HugeRTEEditor) => {
       const length = editor.getContent({ format: 'text' }).length;
       if (length <= sizeLimit) {
         setData(value);
@@ -100,7 +107,7 @@ export const ControlledInputLimitLength: StoryObj<Editor> = {
       }
     };
 
-    const handleBeforeAddUndo = (evt: EditorEvent<Events.EditorEventMap['BeforeAddUndo']>, editor: TinyMCEEditor) => {
+    const handleBeforeAddUndo = (evt: EditorEvent<Events.EditorEventMap['BeforeAddUndo']>, editor: HugeRTEEditor) => {
       const length = editor.getContent({ format: 'text' }).length;
       // note that this is the opposite test as in handleUpdate
       // because we are determining when to deny adding an undo level
@@ -112,7 +119,6 @@ export const ControlledInputLimitLength: StoryObj<Editor> = {
     return (
       <div>
         <Editor
-          apiKey={apiKey}
           value={data}
           onEditorChange={handleUpdate}
           onBeforeAddUndo={handleBeforeAddUndo}
@@ -131,7 +137,6 @@ export const ToggleDisabledProp: StoryObj<Editor> = {
     return (
       <div>
         <Editor
-          apiKey={apiKey}
           initialValue={initialValue}
           disabled={disabled}
         />
@@ -143,16 +148,16 @@ export const ToggleDisabledProp: StoryObj<Editor> = {
   }
 };
 
-export const CloudChannelSetTo5Dev: StoryObj<Editor> = {
-  name: 'Cloud Channel Set To "6-dev"',
+// TODO: is the page refresh really necessary?
+export const CDNVersionSetTo1: StoryObj<Editor> = {
+  name: 'CDN Version set to "1"',
   render: () => (
     <div>
       <Editor
-        apiKey={apiKey}
-        cloudChannel='6-dev'
+        cdnVersion='1'
         initialValue={initialValue}
       />
-      <p>Refresh the page to ensure a load from the "6-dev" channel</p>
+      <p>Refresh the page to ensure a load from the "1" CDN version.</p>
     </div>
   )
 };

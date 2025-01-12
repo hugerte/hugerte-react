@@ -1,10 +1,16 @@
+/**
+ * Official HugeRTE React component
+ * Copyright (c) 2022 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Copyright (c) 2024 HugeRTE contributors
+ * Licensed under the MIT license (https://github.com/hugerte/hugerte-react/blob/main/LICENSE.TXT)
+ */
 import * as React from 'react';
 import { IEvents } from '../Events';
 import { ScriptItem, ScriptLoader } from '../ScriptLoader2';
-import { getTinymce } from '../TinyMCE';
+import { getHugeRTE } from '../HugeRTE';
 import { isFunction, isTextareaOrInput, mergePlugins, uuid, configHandlers, isBeforeInputEventAvailable, isInDoc, setMode } from '../Utils';
 import { EditorPropTypes, IEditorPropTypes } from './EditorPropTypes';
-import type { Bookmark, Editor as TinyMCEEditor, EditorEvent, TinyMCE } from 'tinymce';
+import type { Bookmark, Editor as HugeRTEEditor, EditorEvent, HugeRTE } from 'hugerte';
 
 type OmitStringIndexSignature<T> = { [K in keyof T as string extends K ? never : K]: T[K] };
 
@@ -12,108 +18,102 @@ interface DoNotUse<T extends string> {
   __brand: T;
 }
 
-type OmittedInitProps = 'selector' | 'target' | 'readonly' | 'license_key';
+type OmittedInitProps = 'selector' | 'target' | 'readonly';
 
-type EditorOptions = Parameters<TinyMCE['init']>[0];
+type EditorOptions = Parameters<HugeRTE['init']>[0];
 
 export type InitOptions = Omit<OmitStringIndexSignature<EditorOptions>, OmittedInitProps> & {
   selector?: DoNotUse<'selector prop is handled internally by the component'>;
   target?: DoNotUse<'target prop is handled internally by the component'>;
   readonly?: DoNotUse<'readonly prop is overridden by the component, use the `disabled` prop instead'>;
-  license_key?: DoNotUse<'license_key prop is overridden by the integration, use the `licenseKey` prop instead'>;
 } & { [key: string]: unknown };
 
-export type Version = `${'4' | '5' | '6' | '7'}${'' | '-dev' | '-testing' | `.${number}` | `.${number}.${number}`}`;
+export type Version = `${'1'}${'' | `.${number}` | `.${number}.${number}`}`;
 
 export interface IProps {
   /**
-   * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/#apikey React Tech Ref - apiKey}
-   * @description TinyMCE API key for deployments using Tiny Cloud.
-   */
-  apiKey: string;
-  /**
-   * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/#id React Tech Ref - id}
+   * @see {@link https://www.hugerte.org/docs/hugerte/1/react-ref/#id React Tech Ref - id}
    * @description The ID of the element to render the editor into.
    */
   id: string;
   /**
-   * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/#inline React Tech Ref - inline}
-   * @description Whether the editor should be rendered inline. Equivalent to the `inline` option in TinyMCE.
+   * @see {@link https://www.hugerte.org/docs/hugerte/1/react-ref/#inline React Tech Ref - inline}
+   * @description Whether the editor should be rendered inline. Equivalent to the `inline` option in HugeRTE.
    */
   inline: boolean;
   /**
-   * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/#initialvalue React Tech Ref - initialValue}
+   * @see {@link https://www.hugerte.org/docs/hugerte/1/react-ref/#initialvalue React Tech Ref - initialValue}
    * @description The initial HTML content of the editor.
    *
    * IMPORTANT: Ensure that this is **not** updated by `onEditorChange` or the editor will be unusable.
    */
   initialValue: string;
   /**
-   * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/#oneditorchange React Tech Ref - onEditorChange}
+   * @see {@link https://www.hugerte.org/docs/hugerte/1/react-ref/#oneditorchange React Tech Ref - onEditorChange}
    * @description Used to store the state of the editor outside the component. Typically used for controlled components.
    * @param a The current HTML content of the editor.
-   * @param editor The TinyMCE editor instance.
+   * @param editor The HugeRTE editor instance.
    * @returns void
    */
-  onEditorChange: (a: string, editor: TinyMCEEditor) => void;
+  onEditorChange: (a: string, editor: HugeRTEEditor) => void;
   /**
-   * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/#value React Tech Ref - value}
+   * @see {@link https://www.hugerte.org/docs/hugerte/1/react-ref/#value React Tech Ref - value}
    * @description The current HTML content of the editor. Typically used for controlled components.
    */
   value: string;
   /**
-   * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/#init React Tech Ref - init}
-   * @description Additional settings passed to `tinymce.init()` when initializing the editor.
+   * @see {@link https://www.hugerte.org/docs/hugerte/1/react-ref/#init React Tech Ref - init}
+   * @description Additional settings passed to `hugerte.init()` when initializing the editor.
    */
   init: InitOptions;
   /**
-   * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/#tagname React Tech Ref - tagName}
+   * @see {@link https://www.hugerte.org/docs/hugerte/1/react-ref/#tagname React Tech Ref - tagName}
    * @description The tag name of the element to render the editor into. Only valid when `inline` is `true`.
    */
   tagName: string;
   /**
-   * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/#tabIndex React Tech Ref - tabIndex}
+   * @see {@link https://www.hugerte.org/docs/hugerte/1/react-ref/#tabIndex React Tech Ref - tabIndex}
    * @description The tab index of the element that the editor wraps.
    */
   tabIndex: number;
   /**
-   * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/#cloudchannel React Tech Ref - cloudChannel}
-   * @description The TinyMCE build to use when loading from Tiny Cloud.
+   * @description The HugeRTE version to use when loading from jsDelivr CDN. By default, version 1
+   * (that is, the latest minor and patch release of the major version 1) will be used.
+   * For more info about the possible version formats, see the {@link https://www.jsdelivr.com/documentation#id-npm jsDelivr documentation}.
    */
-  cloudChannel: Version;
+  cdnVersion: Version;
   /**
-   * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/#plugins React Tech Ref - plugins}
-   * @description The plugins to load into the editor. Equivalent to the `plugins` option in TinyMCE.
+   * @see {@link https://www.hugerte.org/docs/hugerte/1/react-ref/#plugins React Tech Ref - plugins}
+   * @description The plugins to load into the editor. Equivalent to the `plugins` option in HugeRTE.
    */
   plugins: NonNullable<EditorOptions['plugins']>;
   /**
-   * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/#toolbar React Tech Ref - toolbar}
-   * @description The toolbar to load into the editor. Equivalent to the `toolbar` option in TinyMCE.
+   * @see {@link https://www.hugerte.org/docs/hugerte/1/react-ref/#toolbar React Tech Ref - toolbar}
+   * @description The toolbar to load into the editor. Equivalent to the `toolbar` option in HugeRTE.
    */
   toolbar: NonNullable<EditorOptions['toolbar']>;
   /**
-   * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/#disabled React Tech Ref - disabled}
+   * @see {@link https://www.hugerte.org/docs/hugerte/1/react-ref/#disabled React Tech Ref - disabled}
    * @description Whether the editor should be "disabled" (read-only).
    */
   disabled: boolean;
   /**
-   * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/#textareaname React Tech Ref - textareaName}
+   * @see {@link https://www.hugerte.org/docs/hugerte/1/react-ref/#textareaname React Tech Ref - textareaName}
    * @description Set the `name` attribute of the `textarea` element used for the editor in forms. Only valid in iframe mode.
    */
   textareaName: string;
   /**
-   * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/#tinymcescriptsrc React Tech Ref - tinymceScriptSrc}
-   * @description The URL of the TinyMCE script to lazy load.
+   * @description The URL of the HugeRTE script to lazy load.
    */
-  tinymceScriptSrc: string | string[] | ScriptItem[];
+  hugerteScriptSrc: string;
   /**
-   * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/#rollback React Tech Ref - rollback}
+   * @see {@link https://www.hugerte.org/docs/hugerte/1/react-ref/#rollback React Tech Ref - rollback}
    * @description The number of milliseconds to wait before reverting to the previous value when the editor's content changes.
    */
   rollback: number | false;
   /**
-   * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/#scriptloading React Tech Ref - scriptLoading}
-   * @description Options for how the TinyMCE script should be loaded.
+   * @see {@link https://www.hugerte.org/docs/hugerte/1/react-ref/#scriptloading React Tech Ref - scriptLoading}
+   * @description Options for how the HugeRTE script should be loaded.
    * @property async Whether the script should be loaded with the `async` attribute.
    * @property defer Whether the script should be loaded with the `defer` attribute.
    * @property delay The number of milliseconds to wait before loading the script.
@@ -123,26 +123,21 @@ export interface IProps {
     defer?: boolean;
     delay?: number;
   };
-  /**
-   * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/#licenseKey React Tech Ref - licenseKey}
-   * @description Tiny Cloud License Key for when self-hosting TinyMCE.
-   */
-  licenseKey: string;
 }
 
 export interface IAllProps extends Partial<IProps>, Partial<IEvents> { }
 
 /**
- * @see {@link https://www.tiny.cloud/docs/tinymce/7/react-ref/ TinyMCE React Technical Reference}
+ * @see {@link https://www.hugerte.org/docs/hugerte/1/react-ref/ HugeRTE React Technical Reference}
  */
 export class Editor extends React.Component<IAllProps> {
   public static propTypes: IEditorPropTypes = EditorPropTypes;
 
   public static defaultProps: Partial<IAllProps> = {
-    cloudChannel: '7',
+    cdnVersion: '1',
   };
 
-  public editor?: TinyMCEEditor;
+  public editor?: HugeRTEEditor;
 
   private id: string;
   private elementRef: React.RefObject<HTMLElement>;
@@ -174,7 +169,7 @@ export class Editor extends React.Component<IAllProps> {
       if (this.editor.initialized) {
         this.currentContent = this.currentContent ?? this.editor.getContent();
         if (typeof this.props.initialValue === 'string' && this.props.initialValue !== prevProps.initialValue) {
-          // same as resetContent in TinyMCE 5
+          // same as resetContent in TinyMCE 5 – TODO what does this mean for HugeRTE?
           this.editor.setContent(this.props.initialValue);
           this.editor.undoManager.clear();
           this.editor.undoManager.add();
@@ -216,10 +211,10 @@ export class Editor extends React.Component<IAllProps> {
   }
 
   public componentDidMount() {
-    if (getTinymce(this.view) !== null) {
+    if (getHugeRTE(this.view) !== null) {
       this.initialise();
-    } else if (Array.isArray(this.props.tinymceScriptSrc) && this.props.tinymceScriptSrc.length === 0) {
-      this.props.onScriptsLoadError?.(new Error('No `tinymce` global is present but the `tinymceScriptSrc` prop was an empty array.'));
+    } else if (Array.isArray(this.props.hugerteScriptSrc) && this.props.hugerteScriptSrc.length === 0) {
+      this.props.onScriptsLoadError?.(new Error('No `hugerte` global is present but the `hugerteScriptSrc` prop was an empty array.'));
     } else if (this.elementRef.current?.ownerDocument) {
       const successHandler = () => {
         this.props.onScriptsLoad?.();
@@ -260,7 +255,7 @@ export class Editor extends React.Component<IAllProps> {
   }
 
   private changeEvents() {
-    const isIE = getTinymce(this.view)?.Env?.browser?.isIE();
+    const isIE = getHugeRTE(this.view)?.Env?.browser?.isIE();
     return (isIE
       ? 'change keyup compositionend setcontent CommentChange'
       : 'change input compositionend setcontent CommentChange'
@@ -294,26 +289,15 @@ export class Editor extends React.Component<IAllProps> {
   private getScriptSources(): ScriptItem[] {
     const async = this.props.scriptLoading?.async;
     const defer = this.props.scriptLoading?.defer;
-    if (this.props.tinymceScriptSrc !== undefined) {
-      if (typeof this.props.tinymceScriptSrc === 'string') {
-        return [{ src: this.props.tinymceScriptSrc, async, defer }];
+    if (this.props.hugerteScriptSrc !== undefined) {
+      if (typeof this.props.hugerteScriptSrc === 'string') {
+        return [{ src: this.props.hugerteScriptSrc, async, defer }];
       }
-      // multiple scripts can be specified which allows for hybrid mode
-      return this.props.tinymceScriptSrc.map((item) => {
-        if (typeof item === 'string') {
-          // async does not make sense for multiple items unless
-          // they are not dependent (which will be unlikely)
-          return { src: item, async, defer };
-        } else {
-          return item;
-        }
-      });
     }
-    // fallback to the cloud when the tinymceScriptSrc is not specified
-    const channel = this.props.cloudChannel as Version; // `cloudChannel` is in `defaultProps`, so it's always defined.
-    const apiKey = this.props.apiKey ? this.props.apiKey : 'no-api-key';
-    const cloudTinyJs = `https://cdn.tiny.cloud/1/${apiKey}/tinymce/${channel}/tinymce.min.js`;
-    return [{ src: cloudTinyJs, async, defer }];
+    // fallback to jsDelivr CDN when the hugerteScriptSrc is not specified
+    // `cdnVersion` is in `defaultProps`, so it's always defined.
+    const cdnLink = `https://cdn.jsdelivr.net/npm/hugerte@${this.props.cdnVersion as Version}/hugerte.min.js`;
+    return [{ src: cdnLink, async, defer }];
   }
 
   private getInitialValue() {
@@ -432,14 +416,14 @@ export class Editor extends React.Component<IAllProps> {
         setTimeout(() => this.initialise(attempts + 1), 100);
       } else {
         // give up, at this point it seems that more polling is unlikely to help
-        throw new Error('tinymce can only be initialised when in a document');
+        throw new Error('hugerte can only be initialised when in a document');
       }
       return;
     }
 
-    const tinymce = getTinymce(this.view);
-    if (!tinymce) {
-      throw new Error('tinymce should have been loaded into global scope');
+    const hugerte = getHugeRTE(this.view);
+    if (!hugerte) {
+      throw new Error('hugerte should have been loaded into global scope');
     }
 
     const finalInit: EditorOptions = {
@@ -450,7 +434,6 @@ export class Editor extends React.Component<IAllProps> {
       inline: this.inline,
       plugins: mergePlugins(this.props.init?.plugins, this.props.plugins),
       toolbar: this.props.toolbar ?? this.props.init?.toolbar,
-      ...(this.props.licenseKey ? { license_key: this.props.licenseKey } : {}),
       setup: (editor) => {
         this.editor = editor;
         this.bindHandlers({});
@@ -460,7 +443,7 @@ export class Editor extends React.Component<IAllProps> {
         // However we don't want to take on the responsibility of sanitizing
         // to remove XSS in the react integration so we have a chicken and egg
         // problem... We avoid it by sneaking in a set content before the first
-        // "official" setContent and using TinyMCE to do the sanitization.
+        // "official" setContent and using HugeRTE to do the sanitization.
         if (this.inline && !isTextareaOrInput(target)) {
           editor.once('PostRender', (_evt) => {
             editor.setContent(this.getInitialValue(), { no_events: true });
@@ -472,12 +455,12 @@ export class Editor extends React.Component<IAllProps> {
         }
       },
       init_instance_callback: (editor) => {
-        // check for changes that happened since tinymce.init() was called
+        // check for changes that happened since hugerte.init() was called
         const initialValue = this.getInitialValue();
         this.currentContent = this.currentContent ?? editor.getContent();
         if (this.currentContent !== initialValue) {
           this.currentContent = initialValue;
-          // same as resetContent in TinyMCE 5
+          // same as resetContent in HugeRTE 5
           editor.setContent(initialValue);
           editor.undoManager.clear();
           editor.undoManager.add();
@@ -498,6 +481,6 @@ export class Editor extends React.Component<IAllProps> {
       target.value = this.getInitialValue();
     }
 
-    tinymce.init(finalInit);
+    hugerte.init(finalInit);
   };
 }

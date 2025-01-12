@@ -1,6 +1,12 @@
+/**
+ * Official HugeRTE React component
+ * Copyright (c) 2022 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Copyright (c) 2024 HugeRTE contributors
+ * Licensed under the MIT license (https://github.com/hugerte/hugerte-react/blob/main/LICENSE.TXT)
+ */
 import { eventPropTypes, IEventPropTypes } from './components/EditorPropTypes';
 import { IAllProps } from './components/Editor';
-import type { Editor as TinyMCEEditor, EditorEvent } from 'tinymce';
+import type { Editor as HugeRTEEditor, EditorEvent } from 'hugerte';
 
 export const isFunction = (x: unknown): x is Function => typeof x === 'function';
 
@@ -42,7 +48,7 @@ export const configHandlers2 = <H> (
 };
 
 export const configHandlers = (
-  editor: TinyMCEEditor,
+  editor: HugeRTEEditor,
   prevProps: Partial<IAllProps>,
   props: Partial<IAllProps>,
   boundHandlers: Record<string, (event: EditorEvent<any>) => unknown>,
@@ -101,12 +107,8 @@ export const isInDoc = (elem: Node) => {
   return elem.isConnected;
 };
 
-export const setMode = (editor: TinyMCEEditor | undefined, mode: 'readonly' | 'design') => {
+export const setMode = (editor: HugeRTEEditor | undefined, mode: 'readonly' | 'design') => {
   if (editor !== undefined) {
-    if (editor.mode != null && typeof editor.mode === 'object' && typeof editor.mode.set === 'function') {
-      editor.mode.set(mode);
-    } else { // support TinyMCE 4
-      (editor as any).setMode(mode);
-    }
+    editor.mode.set(mode);
   }
 };

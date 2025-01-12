@@ -14,7 +14,7 @@
     "preserveConstEnums": true,
     "strictNullChecks": true,
     "allowSyntheticDefaultImports": true,
-    "target": "es5",
+    "target": "es2015",
     "types": [
       "node",
       "prop-types",

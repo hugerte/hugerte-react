@@ -1,9 +1,8 @@
 import { Assertions } from '@ephox/agar';
 import { context, describe, it } from '@ephox/bedrock-client';
 
-import { VALID_API_KEY, VERSIONS } from '../alien/TestHelpers';
+import { VERSIONS } from '../alien/TestHelpers';
 import * as Loader from '../alien/Loader';
-import { TinyAssertions } from '@ephox/mcagar';
 import { IAllProps } from 'src/main/ts';
 
 const assertProperty = (obj: {}, propName: string, expected: unknown) => {
@@ -13,7 +12,7 @@ const assertProperty = (obj: {}, propName: string, expected: unknown) => {
 describe('EditorInitTest', () => {
   VERSIONS.forEach((version) =>
     Loader.withVersion(version, (renderWithVersion) => {
-      const defaultProps: IAllProps = { apiKey: VALID_API_KEY, cloudChannel: version };
+      const defaultProps: IAllProps = { cdnVersion: version };
       const render = (props: IAllProps = {}) => renderWithVersion({ ...defaultProps, ...props });
 
       context('tagName prop changes element', () => {
@@ -64,16 +63,16 @@ describe('EditorInitTest', () => {
 
       it('Value prop should propagate changes to editor', async () => {
         using ctx = await render({ value: '<p>Initial Value</p>' });
-        TinyAssertions.assertContent(ctx.editor, '<p>Initial Value</p>');
+        Assertions.assertHtml('Checking HugeRTE content', '<p>Initial Value</p>', ctx.editor.getContent());
         ctx.reRender({ ...defaultProps, value: '<p>New Value</p>' });
-        TinyAssertions.assertContent(ctx.editor, '<p>New Value</p>');
+        Assertions.assertHtml('Checking HugeRTE content', '<p>New Value</p>', ctx.editor.getContent());
       });
 
       it('Disabled prop should disable editor', async () => {
         using ctx = await render();
-        Assertions.assertEq('Should be design mode', true, '4' === version ? !ctx.editor.readonly : ctx.editor.mode.get() === 'design');
+        Assertions.assertEq('Should be design mode', true, ctx.editor.mode.get() === 'design');
         ctx.reRender({ ...defaultProps, disabled: true });
-        Assertions.assertEq('Should be readonly mode', true, '4' === version ? ctx.editor.readonly : ctx.editor.mode.get() === 'readonly');
+        Assertions.assertEq('Should be readonly mode', true, ctx.editor.mode.get() === 'readonly');
       });
 
       it('Using an overriden props will cause a TS error', async () => {
@@ -81,7 +80,7 @@ describe('EditorInitTest', () => {
         using _ = await render({
           init: {
             // @ts-expect-error Overriden props
-            target: document.createElement('div'), readonly: true, selector: 'textarea#my-id', license_key: 'gpl'
+            target: document.createElement('div'), readonly: true, selector: 'textarea#my-id'
           }
         });
       });

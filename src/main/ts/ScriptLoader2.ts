@@ -1,3 +1,9 @@
+/**
+ * Official HugeRTE React component
+ * Copyright (c) 2022 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Copyright (c) 2024 HugeRTE contributors
+ * Licensed under the MIT license (https://github.com/hugerte/hugerte-react/blob/main/LICENSE.TXT)
+ */
 import { uuid } from './Utils';
 
 export type CallbackFn = () => void;

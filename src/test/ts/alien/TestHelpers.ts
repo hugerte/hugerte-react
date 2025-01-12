@@ -1,19 +1,33 @@
 import { Assertions } from '@ephox/agar';
-import { Cell, Obj } from '@ephox/katamari';
 import { Version } from 'src/main/ts/components/Editor';
-import { Editor as TinyMCEEditor } from 'tinymce';
+import { Editor as HugeRTEEditor } from 'hugerte';
+import { ScriptLoader } from  'src/main/ts/ScriptLoader2';
 
 interface EventHandlerArgs<T> {
   editorEvent: T;
-  editor: TinyMCEEditor;
+  editor: HugeRTEEditor;
 }
 
-type HandlerType<A> = (a: A, editor: TinyMCEEditor) => unknown;
+type HandlerType<A> = (a: A, editor: HugeRTEEditor) => unknown;
 
-const VERSIONS: Version[] = [ '4', '5', '6', '7' ];
-const CLOUD_VERSIONS: Version[] = [ '5', '6', '7' ];
+const VERSIONS: Version[] = [ '1' ];
+const CDN_VERSIONS: Version[] = [ '1' ];
 
-const VALID_API_KEY = 'qagffr3pkuv17a8on1afax661irst1hbr4e6tbv888sz91jc';
+interface Cell<T> {
+  readonly get: () => T;
+  readonly set: (value: T) => void;
+}
+
+const Cell = <T>(initial: T): Cell<T> => {
+  let value = initial;
+
+  return {
+    get: () => value,
+    set: (v: T) => {
+      value = v;
+    }
+  };
+};
 
 const EventStore = () => {
   const state: Cell<Record<string, EventHandlerArgs<unknown>[]>> = Cell({});
@@ -21,8 +35,7 @@ const EventStore = () => {
   const createHandler = <T>(name: string): HandlerType<T> => (event: T, editor) => {
     const oldState = state.get();
 
-    const eventHandlerState = Obj.get(oldState, name)
-      .getOr([] as EventHandlerArgs<unknown>[])
+    const eventHandlerState = (oldState[name] ?? [] as EventHandlerArgs<unknown>[])
       .concat([{ editorEvent: event, editor }]);
 
     state.set({
@@ -47,10 +60,30 @@ const EventStore = () => {
   };
 };
 
+/** Function to clean up and remove HugeRTE-related scripts and links from the document */
+const cleanupGlobalHugeRTE = (): void => {
+  ScriptLoader.reinitialize();
+  delete (globalThis as any).hugerte;
+  delete (globalThis as any).hugeRTE;
+  /** Helper function to check if an element has a HugeRTE-related URI in a specific attribute */
+  const hasHugeRTEUri = (attrName: string) => (elm: Element): boolean => {
+    const src = elm.getAttribute(attrName);
+    return src != null && src.includes('hugerte');
+  };
+  // Find all script and link elements that have a HugeRTE-related URI
+  [
+    ...Array.from(document.querySelectorAll('script')).filter(hasHugeRTEUri('src')),
+    ...Array.from(document.querySelectorAll('link')).filter(hasHugeRTEUri('href'))
+  ].forEach((elm) => elm.remove());
+};
+
 export {
-  VALID_API_KEY,
+  cleanupGlobalHugeRTE,
+};
+
+export {
   EventStore,
   VERSIONS,
-  CLOUD_VERSIONS,
+  CDN_VERSIONS,
   Version
 };

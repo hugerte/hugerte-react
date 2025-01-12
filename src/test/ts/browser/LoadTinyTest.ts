@@ -1,75 +1,52 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Assertions } from '@ephox/agar';
 import { beforeEach, describe, it } from '@ephox/bedrock-client';
-import { Arr, Global, Strings } from '@ephox/katamari';
 
-import { CLOUD_VERSIONS, VALID_API_KEY, VERSIONS, type Version } from '../alien/TestHelpers';
+import { CDN_VERSIONS, VERSIONS, type Version } from '../alien/TestHelpers';
 import { render } from '../alien/Loader';
 import { ScriptLoader } from 'src/main/ts/ScriptLoader2';
-import { Attribute, Remove, SelectorFilter, SugarElement } from '@ephox/sugar';
 
-const assertTinymceVersion = (version: Version) => {
-  Assertions.assertEq(`Loaded version of TinyMCE should be ${version}`, version, Global.tinymce.majorVersion);
+const assertHugeRTEVersion = (version: Version) => {
+  Assertions.assertEq(`Loaded version of HugeRTE should be ${version}`, version, (globalThis as any).hugerte.majorVersion);
 };
 
-export const deleteTinymce = () => {
+export const deleteHugeRTE = () => {
   ScriptLoader.reinitialize();
 
-  delete Global.tinymce;
-  delete Global.tinyMCE;
-  const hasTinymceUri = (attrName: string) => (elm: SugarElement<Element>) =>
-    Attribute.getOpt(elm, attrName).exists((src) => Strings.contains(src, 'tinymce'));
+  delete (globalThis as any).hugerte;
+  delete (globalThis as any).hugeRTE;
 
-  const elements = Arr.flatten([
-    Arr.filter(SelectorFilter.all('script'), hasTinymceUri('src')),
-    Arr.filter(SelectorFilter.all('link'), hasTinymceUri('href')),
-  ]);
+  const hasHugeRTEUri = (attrName: string) => (elm: Element) => {
+    const src = elm.getAttribute(attrName);
+    return src != null && src.includes('hugerte');
+  };
 
-  Arr.each(elements, Remove.remove);
+  [
+    ...Array.from(document.querySelectorAll('script')).filter(hasHugeRTEUri('src')),
+    ...Array.from(document.querySelectorAll('link')).filter(hasHugeRTEUri('href'))
+  ].forEach((elm) => elm.remove());
 };
 
 describe('LoadTinyTest', () => {
   beforeEach(() => {
-    deleteTinymce();
+    deleteHugeRTE();
   });
 
   VERSIONS.forEach((version) => {
-    it(`Should be able to load local version (${version}) of TinyMCE using the tinymceScriptSrc prop`, async () => {
-      using _ = await render({ tinymceScriptSrc: `/project/node_modules/tinymce-${version}/tinymce.min.js`, licenseKey: 'gpl' });
-      assertTinymceVersion(version);
+    it(`Should be able to load local version (${version}) of HugeRTE using the hugerteScriptSrc prop`, async () => {
+      using _ = await render({ hugerteScriptSrc: `/project/node_modules/hugerte-${version}/hugerte.min.js` });
+      assertHugeRTEVersion(version);
     });
   });
 
-  CLOUD_VERSIONS.forEach((version) => {
-    it(`Should be able to load TinyMCE from Cloud (${version})`, async () => {
-      const apiKey = 'a-fake-api-key';
-      using _ = await render({ apiKey, cloudChannel: version });
-      assertTinymceVersion(version);
+  CDN_VERSIONS.forEach((version) => {
+    it(`Should be able to load HugeRTE from CDN (${version})`, async () => {
+      using _ = await render({ cdnVersion: version });
+      assertHugeRTEVersion(version);
       Assertions.assertEq(
-        'TinyMCE should have been loaded from Cloud',
-        `https://cdn.tiny.cloud/1/${apiKey}/tinymce/${version}`,
-        Global.tinymce.baseURI.source
-      );
-    });
-
-    it(`Should be able to load TinyMCE (${version}) in hybrid`, async () => {
-      using _ = await render({
-        tinymceScriptSrc: [
-          `/project/node_modules/tinymce-${version}/tinymce.min.js`,
-          `https://cdn.tiny.cloud/1/${VALID_API_KEY}/tinymce/${version}/cloud-plugins.min.js?tinydrive=${version}`
-        ],
-        plugins: [ 'tinydrive' ]
-      });
-      assertTinymceVersion(version);
-      Assertions.assertEq(
-        'TinyMCE should have been loaded locally',
-        `/project/node_modules/tinymce-${version}`,
-        Global.tinymce.baseURI.path
-      );
-      Assertions.assertEq(
-        'The tinydrive plugin should have defaults for the cloud',
-        `https://cdn.tiny.cloud/1/${VALID_API_KEY}/tinymce-plugins/tinydrive/${version}/plugin.min.js`,
-        (Global.tinymce.defaultOptions || Global.tinymce.defaultSettings)?.custom_plugin_urls?.tinydrive
+        'HugeRTE should have been loaded from jsDelivr CDN',
+        `https://cdn.jsdelivr.net/npm/hugerte@${version}`,
+        (globalThis as any).hugerte.baseURI.source
       );
     });
   });

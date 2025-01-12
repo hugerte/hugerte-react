@@ -1,49 +1,43 @@
 import * as Loader from '../alien/Loader';
-import { PlatformDetection } from '@ephox/sand';
 
 import { describe, it } from '@ephox/bedrock-client';
 
-import { getTinymce } from '../../../main/ts/TinyMCE';
+import { getHugeRTE } from '../../../main/ts/HugeRTE';
 import { EventStore, VERSIONS } from '../alien/TestHelpers';
-import { Editor as TinyMCEEditor, EditorEvent, Events } from 'tinymce';
+import { Editor as HugeRTEEditor, EditorEvent, Events } from 'hugerte';
 import { Assertions } from '@ephox/agar';
-import { TinyAssertions } from '@ephox/mcagar';
 
 type SetContentEvent = EditorEvent<Events.EditorEventMap['SetContent']>;
 
 describe('EditorBehaviourTest', () => {
-  const browser = PlatformDetection.detect().browser;
-  if (browser.isIE()) {
-    // INT-2278: This test currently times out in IE so we are skipping it
-    return;
-  }
-  const versionRegex = /6|7/;
+  // See lines 40 and 105
+  // const versionRegex = /6|7/;
 
-  const isEditor = (val: unknown): val is TinyMCEEditor => {
-    const tinymce = getTinymce(window);
-    if (!tinymce) {
+  const isEditor = (val: unknown): val is HugeRTEEditor => {
+    const hugerte = getHugeRTE(window);
+    if (!hugerte) {
       return false;
     }
-    return val instanceof tinymce.Editor;
+    return val instanceof hugerte.Editor;
   };
 
   const eventStore = EventStore();
 
   VERSIONS.forEach((version) =>
     Loader.withVersion(version, (render) => {
-      it('Assert structure of tinymce and tinymce-react events', async () => {
+      it('Assert structure of hugerte and hugerte-react events', async () => {
         using ctx = await render({
           onEditorChange: eventStore.createHandler('onEditorChange'),
           onSetContent: eventStore.createHandler('onSetContent'),
         });
 
-        // tinymce native event
+        // hugerte native event
         // initial content is empty as editor does not have a value or initialValue
         eventStore.each<SetContentEvent>('onSetContent', (events) => {
-          // note that this difference in behavior in 5-6 may be a bug, the team is investigating
+          // note that this difference in behavior in TinyMCE 5-6 may be a bug, TODO investigate for HugeRTE
           Assertions.assertEq(
-            'First arg should be event from Tiny',
-            versionRegex.test(version) ? '<p><br data-mce-bogus="1"></p>' : '',
+            'First arg should be event from HugeRTE',
+            /* versionRegex.test(version) */ true ? '<p><br data-mce-bogus="1"></p>' : '',
             events[0].editorEvent.content
           );
           Assertions.assertEq('Second arg should be editor', true, isEditor(events[0].editor));
@@ -51,7 +45,7 @@ describe('EditorBehaviourTest', () => {
         eventStore.clearState();
 
         ctx.editor.setContent('<p>Initial Content</p>');
-        // tinymce native event
+        // hugerte native event
         eventStore.each<SetContentEvent>('onSetContent', (events) => {
           Assertions.assertEq('onSetContent should have been fired once', 1, events.length);
           Assertions.assertEq(
@@ -62,7 +56,7 @@ describe('EditorBehaviourTest', () => {
           Assertions.assertEq('Second arg should be editor', true, isEditor(events[0].editor));
         });
 
-        // tinymce-react unique event
+        // hugerte-react unique event
         eventStore.each<string>('onEditorChange', (events) => {
           Assertions.assertEq('First arg should be new content', '<p>Initial Content</p>', events[0].editorEvent);
           Assertions.assertEq('Second arg should be editor', true, isEditor(events[0].editor));
@@ -88,7 +82,7 @@ describe('EditorBehaviourTest', () => {
         using ctx = await render({ initialValue: '<p>Initial Content</p>' });
         await ctx.reRender({ onSetContent: eventStore.createHandler('onSetContent') });
 
-        TinyAssertions.assertContent(ctx.editor, '<p>Initial Content</p>');
+        Assertions.assertHtml('Checking HugeRTE content', '<p>Initial Content</p>', ctx.editor.getContent());
         ctx.editor.setContent('<p>New Content</p>');
 
         eventStore.each<SetContentEvent>('onSetContent', (events) => {
@@ -107,8 +101,8 @@ describe('EditorBehaviourTest', () => {
         eventStore.each<SetContentEvent>('InitialHandler', (events) => {
           Assertions.assertEq(
             'Initial content is empty as editor does not have a value or initialValue',
-            // note that this difference in behavior in 5-6 may be a bug, the team is investigating
-            versionRegex.test(version) ? '<p><br data-mce-bogus="1"></p>' : '',
+            // note that this difference in behavior in TinyMCE 5-6 may be a bug, TODO investigate for HugeRTE
+            /* versionRegex.test(version) */ true ? '<p><br data-mce-bogus="1"></p>' : '',
             events[0].editorEvent.content
           );
         });
