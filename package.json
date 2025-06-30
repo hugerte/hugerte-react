@@ -41,7 +41,6 @@
     "@ephox/bedrock-client": "^15.0.0",
     "@ephox/bedrock-server": "^15.0.3-alpha.0",
     "@ephox/mcagar": "^9.0.1",
-    "@hugerte/framework-integration-shared": "^1.0.1",
     "@tinymce/eslint-plugin": "^3.0.0",
     "@types/node": "^22.15.34",
     "@types/react": "^19.1.8",
@@ -54,5 +53,8 @@
     "typescript": "~5.8.3",
     "vite": "^6.3.5"
   },
-  "version": "2.0.0"
+  "version": "2.0.0",
+  "dependencies": {
+    "@hugerte/framework-integration-shared": "^1.0.1"
+  }
 }
