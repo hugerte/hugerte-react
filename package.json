@@ -20,7 +20,11 @@
     "build": "yarn run clean && tsc -p ./tsconfig.es2015.json && tsc -p ./tsconfig.cjs.json",
     "watch": "tsc -w -p ./tsconfig.es2015.json"
   },
-  "keywords": ["hugerte", "react", "component"],
+  "keywords": [
+    "hugerte",
+    "react",
+    "component"
+  ],
   "license": "MIT",
   "peerDependencies": {
     "hugerte": "^1.0.6",
@@ -50,5 +54,5 @@
     "typescript": "~5.8.3",
     "vite": "^6.3.5"
   },
-  "version": "1.0.1"
+  "version": "2.0.0"
 }
