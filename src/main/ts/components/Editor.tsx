@@ -8,9 +8,11 @@ import * as React from 'react';
 import { IEvents } from '../Events';
 import { ScriptItem, ScriptLoader } from '../ScriptLoader2';
 import { getHugeRTE } from '../HugeRTE';
-import { isFunction, isTextareaOrInput, mergePlugins, uuid, configHandlers, isBeforeInputEventAvailable, isInDoc, setMode } from '../Utils';
-import { EditorPropTypes, IEditorPropTypes } from './EditorPropTypes';
+import { isFunction, isTextareaOrInput, mergePlugins, configHandlers, isBeforeInputEventAvailable, setMode } from '../Utils';
+import { uuid } from '@hugerte/framework-integration-shared';
 import type { Bookmark, Editor as HugeRTEEditor, EditorEvent, HugeRTE } from 'hugerte';
+
+const changeEvents = 'change keyup compositionend setcontent CommentChange';
 
 type OmitStringIndexSignature<T> = { [K in keyof T as string extends K ? never : K]: T[K] };
 
@@ -131,8 +133,6 @@ export interface IAllProps extends Partial<IProps>, Partial<IEvents> { }
  * @see {@link https://www.hugerte.org/docs/hugerte/1/react-ref/ HugeRTE React Technical Reference}
  */
 export class Editor extends React.Component<IAllProps> {
-  public static propTypes: IEditorPropTypes = EditorPropTypes;
-
   public static defaultProps: Partial<IAllProps> = {
     cdnVersion: '1',
   };
@@ -140,7 +140,7 @@ export class Editor extends React.Component<IAllProps> {
   public editor?: HugeRTEEditor;
 
   private id: string;
-  private elementRef: React.RefObject<HTMLElement>;
+  private elementRef: React.RefObject<HTMLElement | null>;
   private inline: boolean;
   private currentContent?: string;
   private boundHandlers: Record<string, (event: EditorEvent<unknown>) => unknown>;
@@ -149,8 +149,8 @@ export class Editor extends React.Component<IAllProps> {
 
   public constructor(props: Partial<IAllProps>) {
     super(props);
-    this.id = this.props.id || uuid('tiny-react');
-    this.elementRef = React.createRef<HTMLElement>();
+    this.id = this.props.id || uuid('hugerte-react');
+    this.elementRef = React.createRef<HTMLElement | null>();
     this.inline = this.props.inline ?? this.props.init?.inline ?? false;
     this.boundHandlers = {};
   }
@@ -236,7 +236,7 @@ export class Editor extends React.Component<IAllProps> {
   public componentWillUnmount() {
     const editor = this.editor;
     if (editor) {
-      editor.off(this.changeEvents(), this.handleEditorChange);
+      editor.off(changeEvents, this.handleEditorChange);
       editor.off(this.beforeInputEvent(), this.handleBeforeInput);
       editor.off('keypress', this.handleEditorChangeSpecial);
       editor.off('keydown', this.handleBeforeInputSpecial);
@@ -252,14 +252,6 @@ export class Editor extends React.Component<IAllProps> {
 
   public render() {
     return this.inline ? this.renderInline() : this.renderIframe();
-  }
-
-  private changeEvents() {
-    const isIE = getHugeRTE(this.view)?.Env?.browser?.isIE();
-    return (isIE
-      ? 'change keyup compositionend setcontent CommentChange'
-      : 'change input compositionend setcontent CommentChange'
-    );
   }
 
   private beforeInputEvent() {
@@ -319,13 +311,13 @@ export class Editor extends React.Component<IAllProps> {
       const wasControlled = isValueControlled(prevProps);
       const nowControlled = isValueControlled(this.props);
       if (!wasControlled && nowControlled) {
-        this.editor.on(this.changeEvents(), this.handleEditorChange);
+        this.editor.on(changeEvents, this.handleEditorChange);
         this.editor.on(this.beforeInputEvent(), this.handleBeforeInput);
         this.editor.on('keydown', this.handleBeforeInputSpecial);
         this.editor.on('keyup', this.handleEditorChangeSpecial);
         this.editor.on('NewBlock', this.handleEditorChange);
       } else if (wasControlled && !nowControlled) {
-        this.editor.off(this.changeEvents(), this.handleEditorChange);
+        this.editor.off(changeEvents, this.handleEditorChange);
         this.editor.off(this.beforeInputEvent(), this.handleBeforeInput);
         this.editor.off('keydown', this.handleBeforeInputSpecial);
         this.editor.off('keyup', this.handleEditorChangeSpecial);
@@ -404,10 +396,11 @@ export class Editor extends React.Component<IAllProps> {
     if (!target) {
       return; // Editor has been unmounted
     }
-    if (!isInDoc(target)) {
+    if (!target.isConnected) {
       // this is probably someone trying to help by rendering us offscreen
       // but we can't do that because the editor iframe must be in the document
       // in order to have state
+      // TODO: how will this do when we use web component?
       if (attempts === 0) {
         // we probably just need to wait for the current events to be processed
         setTimeout(() => this.initialise(1), 1);

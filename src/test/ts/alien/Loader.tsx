@@ -1,73 +1,9 @@
+import { createRoot } from 'react-dom/client';
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
 import { Editor, IAllProps, IProps, Version } from '../../../main/ts/components/Editor';
-import { HugeRTE, Editor as HugeRTEEditor } from 'hugerte';
+import { Editor as HugeRTEEditor } from 'hugerte';
 import { before, context } from '@ephox/bedrock-client';
-import { cleanupGlobalHugeRTE } from '../alien/TestHelpers';
-
-/* Based on code from TinyMCE, MODIFIED */
-/* See LEGAL.txt for the original license information */
-const loadScript = (url: string, success: () => void, failure: (err: Error) => void): void => {
-  const script = document.createElement('script');
-  script.src = url;
-
-  const onLoad = () => {
-    script.removeEventListener('load', onLoad);
-    script.removeEventListener('error', onError);
-    success();
-  };
-
-  const onError = () => {
-    script.removeEventListener('error', onError);
-    script.removeEventListener('load', onLoad);
-    failure(new Error(`Failed to load script: ${url}`));
-  };
-
-  script.addEventListener('load', onLoad);
-  script.addEventListener('error', onError);
-  document.body.appendChild(script);
-};
-
-const getHugeRTE = (): HugeRTE | undefined => (globalThis as any).hugerte as HugeRTE | undefined;
-
-const setHugeRTEBaseUrl = (hugerte: any, baseUrl: string): void => {
-  const prefix = document.location.protocol + '//' + document.location.host;
-  hugerte.baseURL = baseUrl.indexOf('://') === -1 ? prefix + baseUrl : baseUrl;
-  hugerte.baseURI = new hugerte.util.URI(hugerte.baseURL);
-};
-
-const updateHugeRTEUrls = (packageName: string): void => {
-  const hugerte = getHugeRTE();
-  if (hugerte) {
-    setHugeRTEBaseUrl(hugerte, `/project/node_modules/${packageName}`);
-  }
-};
-
-const versionToPackageName = (version: string) => version === 'latest' ? 'hugerte' : `hugerte-${version}`;
-
-const unload = (): void => {
-  const hugerte = getHugeRTE();
-  if (hugerte) {
-    hugerte.remove();
-  }
-  cleanupGlobalHugeRTE();
-};
-
-const load = (version: string, success: () => void, failure: (err: Error) => void): void => {
-  const packageName = versionToPackageName(version);
-
-  unload();
-  loadScript(`/project/node_modules/${packageName}/hugerte.min.js`, () => {
-    updateHugeRTEUrls(versionToPackageName(version));
-    success();
-  }, failure);
-};
-
-const pLoadVersion = (version: string): Promise<void> =>
-  new Promise((resolve, reject) => {
-    load(version, resolve, reject);
-  });
-/* End of code based on Apache-licensed code. */
+import { pLoadVersion } from '@hugerte/framework-integration-shared';
 
 // @ts-expect-error Remove when dispose polyfill is not needed
 Symbol.dispose ??= Symbol('Symbol.dispose');
@@ -93,8 +29,11 @@ export interface ReactEditorContext extends Context, Disposable {
 
 export const render = async (props: Partial<IAllProps> = {}, container: HTMLElement = getRoot()): Promise<ReactEditorContext> => {
   const originalInit = props.init || {};
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   const originalSetup = originalInit.setup || (() => {});
   const ref = React.createRef<Editor>();
+
+  const root = createRoot(container);
 
   const ctx = await new Promise<Context>((resolve, reject) => {
     const init: IProps['init'] = {
@@ -104,16 +43,18 @@ export const render = async (props: Partial<IAllProps> = {}, container: HTMLElem
 
         editor.on('SkinLoaded', () => {
           setTimeout(() => {
-            const DOMNode = ReactDOM.findDOMNode(ref.current);
+            const DOMNode = ref.current?.editor?.targetElm;
             if (!DOMNode) {
-              return reject('Could not find DOMNode');
+              reject('Could not find DOMNode');
+              return;
             }
-            if (!(DOMNode instanceof HTMLElement)) {
+            if (!(DOMNode instanceof window.HTMLElement)) {
               // TODO: this new error message should come into the changelog
-              return reject('Element is not an HTMLElement');
+              reject('Element is not an HTMLElement');
+              return;
             }
             resolve({
-              ref,
+              ref: ref as React.RefObject<Editor>,
               editor,
               DOMNode,
             });
@@ -130,31 +71,39 @@ export const render = async (props: Partial<IAllProps> = {}, container: HTMLElem
      * touch the nodes created by TinyMCE. Since this only seems to be an issue when rendering TinyMCE 4 directly
      * into a root and a fix would be a breaking change, let's just wrap the editor in a <div> here for now.
      */
-    ReactDOM.render(<div><Editor ref={ref} {...props} init={init} /></div>, container);
+    root.render(<div><Editor ref={ref} {...props} init={init} /></div>);
   });
 
   const remove = () => {
-    ReactDOM.unmountComponentAtNode(container);
+    root.unmount();
+    container.remove();
   };
 
   return {
     ...ctx,
     /** By rendering the Editor into the same root, React will perform a diff and update. */
-    reRender: (newProps: IAllProps) => new Promise<void>((resolve) =>
-      ReactDOM.render(<div><Editor ref={ctx.ref} {...newProps} /></div>, container, resolve)
-    ),
+    reRender: (newProps: IAllProps) => new Promise<void>((resolve) => {
+      root.render(<div><Editor ref={ctx.ref} {...newProps} /></div>);
+      // TODO Why is this necessary now?!
+      if (newProps.disabled) {
+        ctx.editor.mode.set('readonly');
+      }
+      newProps.value
+        ? ctx.editor.once('change', (_event) => resolve())
+        : resolve();
+    }),
     remove,
     [Symbol.dispose]: remove
   };
 };
 
 type RenderWithVersion = (
-  props: Omit<IAllProps, 'cloudChannel' | 'tinymceScriptSrc'>,
+  props: Omit<IAllProps, 'cdnVersion' | 'hugerteScriptSrc'>,
   container?: HTMLElement | HTMLDivElement
 ) => Promise<ReactEditorContext>;
 
 export const withVersion = (version: Version, fn: (render: RenderWithVersion) => void): void => {
-  context(`TinyMCE (${version})`, () => {
+  context(`HugeRTE (${version})`, () => {
     before(async () => {
       await pLoadVersion(version);
     });

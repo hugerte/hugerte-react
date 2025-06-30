@@ -4,7 +4,9 @@
  * Copyright (c) 2024 HugeRTE contributors
  * Licensed under the MIT license (https://github.com/hugerte/hugerte-react/blob/main/LICENSE.TXT)
  */
-import { uuid } from './Utils';
+import { uuid } from '@hugerte/framework-integration-shared';
+
+// TODO: Migrate to shared script loader.
 
 export type CallbackFn = () => void;
 

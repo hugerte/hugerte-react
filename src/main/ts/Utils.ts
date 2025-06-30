@@ -4,15 +4,21 @@
  * Copyright (c) 2024 HugeRTE contributors
  * Licensed under the MIT license (https://github.com/hugerte/hugerte-react/blob/main/LICENSE.TXT)
  */
-import { eventPropTypes, IEventPropTypes } from './components/EditorPropTypes';
+import { IEvents } from './Events';
 import { IAllProps } from './components/Editor';
 import type { Editor as HugeRTEEditor, EditorEvent } from 'hugerte';
 
+// TODO: Use what possible from `@hugerte/framework-integration-shared`
+
 export const isFunction = (x: unknown): x is Function => typeof x === 'function';
 
-const isEventProp = (name: string): name is keyof IEventPropTypes => name in eventPropTypes;
+const isEventProp = (name: keyof IAllProps): name is keyof IEvents => {
+  const what = name.startsWith('on')/*  && name !== 'onEditorChange' */;
+  console.log('isEventProp', name, what);
+  return what;
+}
 
-const eventAttrToEventName = <T extends string>(attrName: `on${T}`): T => attrName.substr(2) as T;
+const eventAttrToEventName = <T extends string>(attrName: `on${T}`): T => attrName.substring(2) as T;
 
 type PropLookup = <K extends keyof IAllProps>(key: K) => IAllProps[K] | undefined;
 
@@ -20,13 +26,13 @@ export const configHandlers2 = <H> (
   handlerLookup: PropLookup,
   on: (name: string, handler: H) => void,
   off: (name: string, handler: H) => void,
-  adapter: <K extends keyof IEventPropTypes> (lookup: PropLookup, key: K) => H,
+  adapter: <K extends keyof IEvents> (lookup: PropLookup, key: K) => H,
   prevProps: Partial<IAllProps>,
   props: Partial<IAllProps>,
   boundHandlers: Record<string, H>
 ): void => {
-  const prevEventKeys = Object.keys(prevProps).filter(isEventProp);
-  const currEventKeys = Object.keys(props).filter(isEventProp);
+  const prevEventKeys = (Object.keys(prevProps) as unknown as (keyof IAllProps)[]).filter(isEventProp);
+  const currEventKeys = (Object.keys(props) as unknown as (keyof IAllProps)[]).filter(isEventProp);
 
   const removedKeys = prevEventKeys.filter((key) => props[key] === undefined);
   const addedKeys = currEventKeys.filter((key) => prevProps[key] === undefined);
@@ -65,17 +71,6 @@ export const configHandlers = (
     boundHandlers
   );
 
-let unique = 0;
-
-export const uuid = (prefix: string): string => {
-  const time = Date.now();
-  const random = Math.floor(Math.random() * 1000000000);
-
-  unique++;
-
-  return prefix + '_' + random + unique + String(time);
-};
-
 export const isTextareaOrInput = (element: Element | null): element is (HTMLTextAreaElement | HTMLInputElement) =>
   element !== null && (element.tagName.toLowerCase() === 'textarea' || element.tagName.toLowerCase() === 'input');
 
@@ -91,21 +86,6 @@ const normalizePluginArray = (plugins?: string | string[]): string[] => {
 export const mergePlugins = (initPlugins: string | string[] | undefined, inputPlugins: string | string[] | undefined): string[] => normalizePluginArray(initPlugins).concat(normalizePluginArray(inputPlugins));
 
 export const isBeforeInputEventAvailable = () => window.InputEvent && typeof (InputEvent.prototype as any).getTargetRanges === 'function';
-
-export const isInDoc = (elem: Node) => {
-  if (!('isConnected' in Node.prototype)) {
-    // Fallback for IE and old Edge
-    let current = elem;
-    let parent = elem.parentNode;
-    while (parent != null) {
-      current = parent;
-      parent = current.parentNode;
-    }
-    return current === elem.ownerDocument;
-  }
-
-  return elem.isConnected;
-};
 
 export const setMode = (editor: HugeRTEEditor | undefined, mode: 'readonly' | 'design') => {
   if (editor !== undefined) {

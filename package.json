@@ -18,21 +18,14 @@
     "test": "bedrock-auto -b chrome-headless -f src/test/ts/**/*Test.ts",
     "test-manual": "bedrock -f src/test/ts/**/*Test.ts",
     "build": "yarn run clean && tsc -p ./tsconfig.es2015.json && tsc -p ./tsconfig.cjs.json",
-    "watch": "tsc -w -p ./tsconfig.es2015.json",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build",
-    "deploy-storybook": "storybook build && gh-pages -d ./storybook-static -u 'tiny-bot <no-reply@tiny.cloud>' --nojekyll"
+    "watch": "tsc -w -p ./tsconfig.es2015.json"
   },
-  "keywords": [],
-  "author": "Ephox Corporation DBA Tiny Technologies, Inc.",
+  "keywords": ["hugerte", "react", "component"],
   "license": "MIT",
-  "dependencies": {
-    "prop-types": "^15.6.2"
-  },
   "peerDependencies": {
     "hugerte": "^1.0.6",
-    "react": "^18.0.0 || ^17.0.1 || ^16.7.0",
-    "react-dom": "^18.0.0 || ^17.0.1 || ^16.7.0"
+    "react": "^19.0.0 || ^18.0.0 || ^17.0.1 || ^16.7.0",
+    "react-dom": "^19.0.0 || ^18.0.0 || ^17.0.1 || ^16.7.0"
   },
   "peerDependenciesMeta": {
     "hugerte": {
@@ -40,35 +33,22 @@
     }
   },
   "devDependencies": {
-    "@babel/core": "^7.24.9",
-    "@babel/preset-env": "^7.24.8",
-    "@babel/preset-react": "^7.24.7",
-    "@babel/preset-typescript": "^7.24.7",
     "@ephox/agar": "8.0.1",
-    "@ephox/bedrock-client": "^14.1.1",
-    "@ephox/bedrock-server": "^14.1.4",
-    "@storybook/addon-essentials": "^8.2.4",
-    "@storybook/addon-interactions": "^8.2.4",
-    "@storybook/addon-links": "^8.2.4",
-    "@storybook/blocks": "^8.2.4",
-    "@storybook/react": "^8.2.4",
-    "@storybook/react-vite": "^8.2.4",
-    "@tinymce/eslint-plugin": "^2.3.1",
-    "@types/node": "^20.14.10",
-    "@types/prop-types": "^15.7.12",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
-    "gh-pages": "^6.1.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "rollup-plugin-license": "^3.5.3",
+    "@ephox/bedrock-client": "^15.0.0",
+    "@ephox/bedrock-server": "^15.0.3-alpha.0",
+    "@ephox/mcagar": "^9.0.1",
+    "@hugerte/framework-integration-shared": "^1.0.1",
+    "@tinymce/eslint-plugin": "^3.0.0",
+    "@types/node": "^22.15.34",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "hugerte": "^1.0.9",
+    "hugerte-1": "npm:hugerte@^1.0.9",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "rimraf": "^6.0.1",
-    "storybook": "^8.2.4",
-    "hugerte": "^1.0.4",
-    "hugerte-1": "npm:hugerte@^1.0.4",
-    "typescript": "~5.5.3",
-    "vite": "^5.3.3"
+    "typescript": "~5.8.3",
+    "vite": "^6.3.5"
   },
-  "version": "1.0.1",
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "version": "1.0.1"
 }

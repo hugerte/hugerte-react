@@ -5,12 +5,16 @@
  * Licensed under the MIT license (https://github.com/hugerte/hugerte-react/blob/main/LICENSE.TXT)
  */
 import type { Editor as HugeRTEEditor, EditorEvent, Events } from 'hugerte';
+import { customEvents, nativeEvents, validEvents } from '@hugerte/framework-integration-shared';
 
 export type EventHandler<A> = (a: EditorEvent<A>, editor: HugeRTEEditor) => unknown;
 
 type EEventHandler<K extends keyof Events.EditorEventMap> = EventHandler<Events.EditorEventMap[K]>;
 
-export interface INativeEvents {
+/** Ensures that T extends U, and returns T. */
+type EnsureExtends<T extends U, U> = T;
+
+export type INativeEvents = EnsureExtends<{
   onBeforePaste: EEventHandler<'beforepaste'>;
   onBlur: EEventHandler<'blur'>;
   onClick: EEventHandler<'click'>;
@@ -43,9 +47,9 @@ export interface INativeEvents {
   onMouseUp: EEventHandler<'mouseup'>;
   onPaste: EEventHandler<'paste'>;
   onSelectionChange: EEventHandler<'selectionchange'>;
-}
+}, Record<`on${typeof nativeEvents[number]}`, unknown>>;
 
-export interface ITinyEvents {
+export type ICustomEvents = EnsureExtends<{
   onActivate: EEventHandler<'activate'>;
   onAddUndo: EEventHandler<'AddUndo'>;
   onBeforeAddUndo: EEventHandler<'BeforeAddUndo'>;
@@ -71,6 +75,7 @@ export interface ITinyEvents {
   onRedo: EEventHandler<'Redo'>;
   onRemove: EEventHandler<'remove'>;
   onReset: EventHandler<unknown>;
+  onResizeEditor: EventHandler<unknown>; // TODO don't know if EEventHandler<'resize'> would be what we need
   onSaveContent: EventHandler<unknown>;
   onSetAttrib: EventHandler<unknown>;
   onObjectResizeStart: EEventHandler<'ObjectResizeStart'>;
@@ -87,8 +92,9 @@ export interface ITinyEvents {
   onPluginLoadError: EEventHandler<'PluginLoadError'>;
   onIconsLoadError: EEventHandler<'IconsLoadError'>;
   onLanguageLoadError: EEventHandler<'LanguageLoadError'>;
+  // TODO: these are specific to the React script loader (which we'll soon want to replace with the shared one)
   onScriptsLoad: () => void;
   onScriptsLoadError: (err: unknown) => void;
-}
+}, Record<`on${typeof customEvents[number]}`, unknown>>;
 
-export interface IEvents extends INativeEvents, ITinyEvents {}
+export type IEvents = EnsureExtends<INativeEvents & ICustomEvents, Record<`on${typeof validEvents[number]}`, unknown>>;

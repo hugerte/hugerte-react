@@ -1,7 +1,7 @@
 import { Assertions } from '@ephox/agar';
 import { Version } from 'src/main/ts/components/Editor';
 import { Editor as HugeRTEEditor } from 'hugerte';
-import { ScriptLoader } from  'src/main/ts/ScriptLoader2';
+import { ScriptLoader } from 'src/main/ts/ScriptLoader2';
 
 interface EventHandlerArgs<T> {
   editorEvent: T;
@@ -60,6 +60,7 @@ const EventStore = () => {
   };
 };
 
+// TODO: remove, we shall import from shared, but then it will also use the shared scriptloader so make sure we only use she shared loader
 /** Function to clean up and remove HugeRTE-related scripts and links from the document */
 const cleanupGlobalHugeRTE = (): void => {
   ScriptLoader.reinitialize();
