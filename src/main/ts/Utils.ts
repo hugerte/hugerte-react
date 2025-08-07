@@ -13,9 +13,7 @@ import type { Editor as HugeRTEEditor, EditorEvent } from 'hugerte';
 export const isFunction = (x: unknown): x is Function => typeof x === 'function';
 
 const isEventProp = (name: keyof IAllProps): name is keyof IEvents => {
-  const what = name.startsWith('on')/*  && name !== 'onEditorChange' */;
-  console.log('isEventProp', name, what);
-  return what;
+  return name.startsWith('on')/*  && name !== 'onEditorChange' */;
 }
 
 const eventAttrToEventName = <T extends string>(attrName: `on${T}`): T => attrName.substring(2) as T;
